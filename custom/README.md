@@ -51,3 +51,16 @@ Its `native:*` selection is therefore **not the security boundary**: the actual
 native configuration, protocol guard, role-specific MCP catalog and container
 mounts are tested independently. Full, Auto and desktop-private Custom modes are
 refused by this restricted executor. No Full Access fallback is permitted.
+
+The real-call fixture disables native memory upkeep and other helper calls.
+The restricted CLI also rejects background `codex exec`; only app-server and
+read-only version/login-status checks are accepted. Test accounting includes
+failed and denied turns, with cache tokens already included in input tokens.
+
+## License boundary
+
+The OSS code is Apache-2.0. `enterprise/` has a separate source-available
+license: development/evaluation is permitted; production enterprise features
+require a key and redistribution is restricted. No enterprise license is
+activated here. Native enterprise budget/billing features must not be assumed
+to be free OSS functionality. Custom code does not modify or bypass this layer.
