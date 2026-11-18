@@ -27,11 +27,11 @@ const bots=(await api('GET','/api/bots')).bots;
 if(bots.some(bot=>['Researcher','Builder','Reviewer'].includes(bot.name)))throw Error('Existing role without saved identity; inspect instead of duplicating');
 const team={};
 for(const role of ['researcher','builder','reviewer']){
- const made=await api('POST','/api/bots',{name:role[0].toUpperCase()+role.slice(1),section:'WORKROOM · 受限编程',modelSelection:{instanceId:'codex_'+role,model:'gpt-6.1-sol',effort:'low'},settings:{approvalMode:'ask',cwd:runtime.project,computer:'off',browser:false,helperModel:false,memoryEnabled:false,memoryUpkeep:false,composio:false,toolScope:scope(role),soul:'只使用指定项目的 MCP 工具。原生 Codex 是只读，不能使用 Mac 终端、个人配置、浏览器、网络、其他项目或提升权限。Docker 工具的 /workspace 是本项目。Researcher 负责 PLAN.md 和委派；Builder 编码测试；Reviewer 只读独立验收，临时输入只能写 /tmp。不得重复派发成功任务。'}});
+ const made=await api('POST','/api/bots',{name:role[0].toUpperCase()+role.slice(1),section:'WORKROOM · 受限编程',modelSelection:{instanceId:'codex_'+role,model:'gpt-6.1-sol',effort:'low'},settings:{approvalMode:'ask',cwd:runtime.project,computer:'off',browser:false,helperModel:false,composio:false,toolScope:scope(role),soul:'只使用指定项目的 MCP 工具。原生 Codex 是只读，不能使用 Mac 终端、个人配置、浏览器、网络、其他项目或提升权限。Docker 工具的 /workspace 是本项目。Researcher 负责 PLAN.md 和委派；Builder 编码测试；Reviewer 只读独立验收，临时输入只能写 /tmp。不得重复派发成功任务。'}});
  const bot=made.bot??made;team[role]={id:bot.id,threadId:bot.threadId};
  await api('POST','/api/mcp/servers',{name:'project_'+role,command:runtime.node,args:[path.join(repo,'custom/sandbox/project-mcp.mjs'),role],env:{WORKROOM_STATE_DIR:state},apps:false,resultBudget:12000});
  await api('PATCH','/api/mcp/servers/project_'+role,{enabled:true});
- await api('PATCH','/api/bots/'+bot.id,{mcpServers:['project_'+role]});
+ await api('PATCH','/api/bots/'+bot.id,{mcpServers:['project_'+role],memoryEnabled:false,memoryUpkeep:false});
 }
 fs.writeFileSync(teamFile,JSON.stringify(team,null,2),{mode:0o600});
 console.log(JSON.stringify({team,modelCalls:0,loopback:base}));
