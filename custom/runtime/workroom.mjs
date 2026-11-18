@@ -59,6 +59,10 @@ if(action.startsWith('phone-')){
   for(let n=0;n<80&&await health();n++)await new Promise(r=>setTimeout(r,250));
   if(await health())throw Error('Server still running; containers left untouched');
  }
+ if(fs.existsSync(path.join(state,'companion/running.json'))){
+  const {runPhone}=await import('./phone.mjs');
+  await runPhone('phone-stop',{state,repo,runtime});
+ }
  for(const [role,name] of Object.entries(runtime.containers)){container(name,role);docker(['stop','--time','5',name]);}
  if(fs.existsSync(record))fs.unlinkSync(record);
  console.log(JSON.stringify({stopped:true,dataPreserved:true}));

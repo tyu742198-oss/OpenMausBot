@@ -87,10 +87,10 @@ From the parent workspace:
 Start explicitly opts into the Companion's authenticated private-network socket
 on port 8810. Its native connection filter refuses public peers; only Wi-Fi is
 enabled. The token-protected control page on 8811 remains loopback-only. No
-firewall rule, router forwarding, login service, cloud account or relay is
-installed or enabled. The existing harness is not restarted. Native E2E support
+firewall rule, router forwarding or login service is installed. Relay is off
+until explicitly enabled with the separate commands below. The existing harness is not restarted. Native E2E support
 is enabled, with its persistent key in the independent Companion home; the relay
-is off. Legacy direct HTTP pairing/chat still requires a trusted LAN, and only
+starts off. Legacy direct HTTP pairing/chat still requires a trusted LAN, and only
 the actual phone handshake proves which encrypted transport it negotiated.
 
 Pair prints a fresh native six-digit, two-minute credential, the phone address,
@@ -110,12 +110,54 @@ from Git. Normal stdout is discarded so the native startup control URL is not
 written into project logs. Only stderr is retained there. No new device gets
 browser or computer control grants by default. Use the native Mac control page
 to revoke a lost phone. Phone access does not broaden Agent execution sandboxes.
-Stop Companion explicitly with phone-stop when it is not wanted; no autostart is
+Stop Companion explicitly with phone-stop when it is not wanted; workroom stop
+also stops Companion and its renewal helper. No autostart is
 registered. Mac restart requires manual workroom start and phone-start.
 
 For remote access, prefer the official Companion Tailscale route on a tailnet,
 or the supported native authenticated E2E relay after its account and client
-requirements are verified. This profile enables neither. Do not forward ports
+requirements are verified. Tailscale remains disabled. Relay can be explicitly enabled after login as
+described below. Do not forward ports
 28145/28146/8810/8811 on a router or expose the loopback owner-trust harness with
 an arbitrary proxy. Installing Tailscale, logging into a relay, or publishing an
 HTTPS endpoint requires a separate concrete configuration and authorization.
+
+
+## Native encrypted Relay
+
+After the owner completes the official `login --relay --data-dir` command with
+the independent WORKROOM data directory, run:
+
+```sh
+./workroom phone-relay-start
+./workroom phone-status
+./workroom phone-relay-stop
+```
+
+Relay start attaches the official short-lived grant to the existing Companion
+through its local authenticated control API. It preserves the same transport
+key and paired devices. The native createRelayTokenService handles renewal and
+backoff in a small separate process; only credentials from the explicit
+WORKROOM account file are read. No browser address or Cloud VPS is reserved.
+The control plane may refuse a grant because of availability or admission;
+a failed grant never initiates a purchase or disables Wi-Fi.
+
+phone-start resumes renewal when this profile was explicitly enabled before.
+phone-relay-stop disables it persistently and leaves Wi-Fi pairing intact;
+phone-stop stops both processes but remembers the opted-in mode for the next
+manual phone-start. There is no login/autostart service. Standard proxy values
+from the existing private runtime manifest apply only to the renewal process.
+
+A paired app learns the relay descriptor from the native endpoint response: it
+contains the same pinned key plus relay host ID and nodes. Reopen the app on
+Wi-Fi once to refresh that information, then test with Wi-Fi off and cellular
+data on. A green label alone is insufficient: verify actual historical chat
+reads and the Companion's device route=relay. The Mac must remain powered,
+awake and online. No sleep settings are changed by these scripts.
+
+Relay credentials and account state must remain private and backed up with
+Companion's key/device registry. The relay-status.json file contains only
+status and expiry times, never a token. After an account sign-out or expired
+installation credential, repeat the official login on the Mac; do not paste
+verification codes into chat. Long-duration operation and sleep/wake recovery
+need separate observation; the initial grant and real phone route were tested.
