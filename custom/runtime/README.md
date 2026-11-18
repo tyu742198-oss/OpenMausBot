@@ -54,3 +54,20 @@ Retain a cold native data backup plus separately scoped external project and
 CLI-login handling before updating. Follow custom/README.md for upstream merges
 and matching code/data rollback. Logs and native Usage remain in the persistent
 state directory; stopping or closing a browser does not erase them.
+
+The daily launcher enables WORKROOM_CODEX_WAIT_GUARD=1. Before the current
+native turn emits any content, reasoning, tool or approval activity, a small
+read-only monitor checks Codex 0.170.0's own logs_2.sqlite for an exact current
+thread/turn capacity retry. A confirmed capacity refusal ends this wait through
+the native driver lifecycle, preserving usage and history without replay or
+provider switching. The renderer displays its existing runtime error message.
+After 30 seconds of otherwise unexplained silence a native notice appears;
+after 90 seconds the wait ends with an explicitly uncertain cause. This is a
+first-response guard, not a total task deadline. Any tool/approval/content
+activity disables it. Already-running tasks and background calls are outside
+this guard. CLI log-schema changes fall back to the bounded silence path.
+
+No credentials, prompts or raw log text are copied into the notice. The guard
+opens only the configured independent CLI home's log database read-only and
+closes it after each check. It never changes a provider, login, sandbox or
+approval grant. It does not guarantee model capacity or a successful retry.

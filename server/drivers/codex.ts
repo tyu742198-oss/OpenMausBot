@@ -2,6 +2,7 @@ import { decodeRoutedCodexConfig, managedCodexArgs, endpointCodexArgs, type Code
 export { managedCodexArgs, endpointCodexArgs } from "./codex-endpoint-config.ts";
 import { codexActionFailure } from "./codex-action-notice.ts";
 import { codexToolSurfaceArgs } from "./codex-tool-surface.ts";
+import { watchCodexWait } from "../../custom/sandbox/codex-wait.ts";
 import { restrictedNativeApproval } from "../../custom/sandbox/codex-policy.ts";
 import { codexShellDisabled, codexTurnConfigArgs } from "./codex-guest.ts";
 import { TEAM_TOOLS_FAILED, teamToolsFailed } from "./team-tools.ts";
@@ -667,6 +668,8 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
       let codexThreadId: string | null = null;
       let codexTurnId: string | null = null;
       let startingNativeTurn = false;
+      let nativeStartedAt = 0;
+      let stopWaitGuard = () => {};
       const earlyNotifications: any[] = [];
       const mcpStartup = mcpStartupTracker(child);
       const state = {
@@ -729,6 +732,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
                 }
                 // Bind synchronously: one stdout chunk can hold the response, events, completion and a late request.
                 codexTurnId = v.turn.id;
+                nativeStartedAt = Date.now();
                 startingNativeTurn = false;
                 for (const notification of earlyNotifications.splice(0)) {
                   if (state.settled || abandoned) break;
@@ -778,7 +782,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
 
       const settle = async (ok: boolean, stopReason: string | null) => {
         if (state.settled) return;
-        state.settled = true; authBridge?.close();
+        state.settled = true; stopWaitGuard(); authBridge?.close();
         for (const finish of Array.from(asks.values())) finish("deny", "OpenMausBot: the turn ended", "system");
         for (const p of rpcPending.values()) p.reject(new Error("turn settled"));
         rpcPending.clear();
@@ -800,6 +804,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
         attempt++;
         emit({ ...base(threadId, turnId), type: "turn.retrying", attempt, delayMs, reason });
         abandoned = true;
+        stopWaitGuard();
         releaseSlot();
         const exited = child.exitCode !== null || child.signalCode !== null;
         if (!exited && !(await terminate()) && !(await waitForExit(child, RELAUNCH_EXIT_WAIT_MS))) {
@@ -831,6 +836,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
 
       const controlsHost = turn.integrations?.localComputer?.scope === "local-computer";
       const handleServerRequest = (msg: any) => {
+        state.streamed = true;
         const method = msg.method as string;
         const params = msg.params ?? {};
         const legacy = method === "execCommandApproval" || method === "applyPatchApproval";
@@ -1221,6 +1227,19 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
             break;
         }
       };
+
+      if (process.env.WORKROOM_CODEX_WAIT_GUARD === "1" && env.CODEX_HOME) {
+        stopWaitGuard = watchCodexWait({
+          home: env.CODEX_HOME,
+          current: () => ({ thread: codexThreadId, turn: codexTurnId, started: nativeStartedAt,
+            active: !state.settled && !abandoned && !stopRequested, worked: state.streamed || state.sawStreamDelta }),
+          notice: message => emit({ ...base(threadId, turnId), type: "runtime.notice", message }),
+          fail: message => {
+            emit({ ...base(threadId, turnId), type: "runtime.error", message });
+            void settle(false, "provider_wait_stopped");
+          },
+        });
+      }
 
       let buf = "";
       child.stdout.setEncoding("utf8");

@@ -181,6 +181,20 @@ describe("CodexDriver turns (fake app-server)", () => {
     scratch = mkdtempSync(join(tmpdir(), "omb-codex-test-"));
   });
 
+  it("stops a log-only capacity retry and releases the task without replaying", async () => {
+    vi.stubEnv("WORKROOM_CODEX_WAIT_GUARD", "1");
+    const home = join(scratch, "capacity-home"); mkdirSync(home);
+    await create({ mode: "capacity-hold", environment: { CODEX_HOME: home } });
+    await instance.adapter.sendTurn({ threadId: "t-capacity-log", text: "Fixture" });
+    const done = await recorder.until(e => e.type === "turn.completed");
+    const errors = recorder.events.filter(e => e.type === "runtime.error");
+    expect(done).toMatchObject({ ok: false, stopReason: "provider_wait_stopped" });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({ message: expect.stringContaining("模型容量不足") });
+    expect(recorder.events.filter(e => e.type === "turn.retrying")).toHaveLength(0);
+    expect(recorder.events.filter(e => e.type === "turn.completed")).toHaveLength(1);
+  });
+
   it("says once when its team tools did not start", async () => {
     await create({ environment: { HOME: scratch, CODEX_HOME: join(scratch, ".codex"), FAKE_CODEX_MCP_FAILED: "agents" } });
     await instance.adapter.sendTurn({ threadId: "team-tools", text: "Fixture" });

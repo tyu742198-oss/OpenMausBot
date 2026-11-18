@@ -63,6 +63,8 @@
 //     later, and the dump records mcpReadyAtTurnStart
 //   FAKE_CODEX_ROLLOUT  rollout path thread/start and thread/resume report as `thread.path`; each happy turn appends a
 //     namespace-less function_call for retry_thread and codex's "unsupported call: retry_thread" output to it
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { spawn } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 
@@ -763,6 +765,14 @@ process.stdin.on("data", (chunk) => {
           if (launched < silent) {
             process.exit(1);
           }
+        }
+        if (mode === "capacity-hold") {
+          const db = new DatabaseSync(join(process.env.CODEX_HOME!, "logs_2.sqlite"));
+          db.exec("CREATE TABLE IF NOT EXISTS logs(id INTEGER PRIMARY KEY, ts INTEGER, target TEXT, feedback_log_body TEXT)");
+          db.prepare("INSERT INTO logs(ts,target,feedback_log_body) VALUES(?,?,?)").run(Math.floor(Date.now()/1000), "codex_core::responses_retry", `${nativeThreadId} ${nativeTurnId} Selected model is at capacity. retrying in 326s`);
+          db.close();
+          out({ jsonrpc: "2.0", id: msg.id, result: { turn: { id: nativeTurnId } } });
+          break;
         }
         if (mode === "safety-rpc") {
           out({ jsonrpc: "2.0", id: msg.id, error: { code: -32603, message: "HTTP 503: This task was blocked by our safety systems." } });
