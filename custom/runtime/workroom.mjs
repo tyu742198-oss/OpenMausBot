@@ -30,7 +30,10 @@ if(action==='status'){
   await new Promise((resolve,reject)=>{const probe=net.createServer();probe.once('error',reject);probe.listen(runtime.port,'127.0.0.1',()=>probe.close(resolve));});
   for(const [role,name] of Object.entries(runtime.containers)){container(name,role);docker(['start',name]);}
   const env={HOME:path.join(state,'home'),USER:process.env.USER??'macbook',PATH:path.dirname(runtime.node)+':/usr/bin:/bin',LANG:'zh_CN.UTF-8',TZ:'Asia/Taipei',TMPDIR:path.join(state,'data/tmp'),OMB_DATA_DIR:path.join(state,'data'),CODEX_HOME:path.join(state,'codex-home'),CODEX_SQLITE_HOME:path.join(state,'codex-home'),WORKROOM_STATE_DIR:state,WORKROOM_RESTRICT_CODEX_NATIVE:'1',OMB_PORT:String(runtime.port),OMB_WEBHOOK_PORT:String(runtime.port+1),OMB_LOOPBACK_TRUST:'owner',OMB_DEV_TRUST_LOCAL_BROWSER:'0',OMB_WARM_SUMMARY:'0',OMB_AI_CHECKS:'0'};
-  for(const key of ['HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY'])if(process.env[key])env[key]=process.env[key];
+  for(const key of ['HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY','NODE_USE_ENV_PROXY']){
+   const value=runtime.networkEnvironment?.[key]??process.env[key];
+   if(value)env[key]=value;
+  }
   fs.mkdirSync(env.TMPDIR,{recursive:true,mode:0o700});
   const log=fs.openSync(path.join(state,'logs/server.log'),'a',0o600);
   const child=spawn(runtime.node,['--experimental-strip-types',path.join(repo,'server/openmausbot.ts'),'serve','--local','--no-pair','--port',String(runtime.port),'--data-dir',path.join(state,'data'),'--label','WORKROOM'],{cwd:repo,env,detached:true,stdio:['ignore',log,log]});

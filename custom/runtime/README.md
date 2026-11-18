@@ -13,6 +13,12 @@ project path and port. State and login files must never enter Git. This is a
 Mac runtime profile, not a Linux installer or permission to restore Mac binaries
 onto a server.
 
+An optional `runtime.networkEnvironment` supplies only HTTP_PROXY, HTTPS_PROXY,
+ALL_PROXY, NO_PROXY and NODE_USE_ENV_PROXY to the owned server process. Node's
+native fetch needs NODE_USE_ENV_PROXY=1 to use an existing authorized proxy for
+plan usage. System proxy settings are never changed; keep loopback addresses
+in NO_PROXY. Review these deployment-specific values when moving machines.
+
 ```sh
 node custom/runtime/workroom.mjs start
 node custom/runtime/workroom.mjs status
