@@ -18,7 +18,10 @@ function container(name,role){
 async function health(){try{const r=await fetch(base+'/api/health',{signal:AbortSignal.timeout(2000)});return r.ok?await r.json():null;}catch{return null;}}
 function owned(pid){try{return execFileSync('/bin/ps',['-p',String(pid),'-o','command='],{encoding:'utf8'}).includes(path.join(repo,'server/openmausbot.ts')+' serve --local --no-pair --port '+runtime.port+' --data-dir '+path.join(state,'data'));}catch{return false;}}
 const action=process.argv[2]??'status';
-if(action==='status'){
+if(action.startsWith('phone-')){
+ const {runPhone}=await import('./phone.mjs');
+ await runPhone(action,{state,repo,runtime});
+}else if(action==='status'){
  const saved=fs.existsSync(record)?JSON.parse(fs.readFileSync(record,'utf8')):null;
  console.log(JSON.stringify({url:base,stateDir:state,running:!!await health(),ownedProcess:saved?owned(saved.pid):false,version:JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version},null,2));
 }else if(action==='start'){
