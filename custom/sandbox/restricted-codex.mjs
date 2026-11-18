@@ -17,7 +17,7 @@ if(!appServer&&JSON.stringify(args)!==JSON.stringify(['--version'])&&JSON.string
  audit({direction:'blocked-subcommand',subcommand:args[0]??null});
  throw Error('Restricted Codex supports app-server and read-only identity checks only; background exec is disabled');
 }
-const forced=appServer?['-c','sandbox_mode="read-only"','-c','approval_policy="on-request"','-c','web_search="disabled"','-c','notify=[]','-c','orchestrator.skills.enabled=false','-c','skills.bundled.enabled=false','-c','skills.include_instructions=false',...disabled.flatMap(k=>['-c',`features.${k}=false`])]:[];
+const forced=appServer?['-c','sandbox_mode="read-only"','-c','approval_policy="on-request"','-c','web_search="disabled"','-c','notify=[]','-c','orchestrator.skills.enabled=false','-c','skills.bundled.enabled=false','-c','skills.include_instructions=false','-c','agents.enabled=false',...disabled.flatMap(k=>['-c',`features.${k}=false`])]:[];
 const env={...process.env,HOME:path.join(state,'codex-home'),CODEX_HOME:path.join(state,'codex-home'),CODEX_SQLITE_HOME:path.join(state,'codex-home')};
 for(const k of ['OPENAI_API_KEY','CODEX_API_KEY','DISCORD_BOT_TOKEN'])delete env[k];
 const child=spawn(runtime.codex,[...args,...forced],{env,stdio:['pipe','pipe','pipe']});
@@ -45,7 +45,7 @@ else{
   if(methods.get(msg.id)==='config/read'&&msg.result?.config){
    const c=msg.result.config;
    const names=Object.entries(c.mcp_servers??{}).filter(([,s])=>s?.enabled!==false).map(([n])=>n);
-   projectMountVerified=names.includes('project_'+role)&&names.every(n=>n==='project_'+role||role==='researcher'&&n==='agents')&&disabled.every(k=>c.features?.[k]===false)&&c.sandbox_mode==='read-only';
+   projectMountVerified=names.includes('project_'+role)&&names.every(n=>n==='project_'+role||role==='researcher'&&n==='agents')&&disabled.every(k=>c.features?.[k]===false)&&c.agents?.enabled===false&&c.sandbox_mode==='read-only';
    audit({direction:'effective-config',mcpNames:names,projectMountVerified,nativeSandbox:c.sandbox_mode});
   }
   if(msg.method==='thread/tokenUsage/updated')audit({direction:'usage',params:msg.params});

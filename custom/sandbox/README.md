@@ -9,6 +9,8 @@ unverified project MCP mounts and background Codex exec are refused. Codex's
 native tool selector alone cannot enforce file isolation. Native terminal,
 editing, browser, computer, plugin and skill capabilities are disabled in an
 independent CLI home; personal config is neither imported nor modified.
+The Codex 0.170.0 profile also forces and verifies `agents.enabled=false`;
+OM's own approved coordination remains responsible for employee delegation.
 
 Project operations run through role-specific MCP tools in three Docker
 containers. Each has one project bind, no Docker socket, no credentials,
