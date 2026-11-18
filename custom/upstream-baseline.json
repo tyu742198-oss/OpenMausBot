@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/milind-soni/OpenMausBot.git",
+  "tag": "v0.1.166",
+  "commit": "2d2d3c5171371a4b641e68d010a488a5d0affb0d",
+  "custom_branch": "custom",
+  "automatic_deployment": false,
+  "license": "Apache-2.0"
+}
