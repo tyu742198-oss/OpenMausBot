@@ -94,11 +94,13 @@ is off. Legacy direct HTTP pairing/chat still requires a trusted LAN, and only
 the actual phone handshake proves which encrypted transport it negotiated.
 
 Pair prints a fresh native six-digit, two-minute credential, the phone address,
-an official deep link, and the Mac-only control link. Never redirect its output
+an official deep link, a terminal QR, and the Mac-only control link. Never redirect its output
 to a log or commit a QR/credential. Browser pairing codes from `workroom pair`
 are a different invitation and do not enable the Companion. On iPhone, allow
 MausBot local-network access, connect to the same trusted Wi-Fi, and enter the
-advertised host:8810 and fresh phone code in the native app. The phone must not
+advertised host:8810 and fresh phone code in a manual-address screen, or scan
+the native terminal QR. An invitation/QR paste box needs the complete
+openmausbot://pair link, not the plain HTTP address or health-check URL. The phone must not
 use 127.0.0.1 (which refers to the phone), 0.0.0.0 or Docker's bridge address.
 The Wi-Fi IP can change with DHCP; use phone-status/phone-pair again then.
 

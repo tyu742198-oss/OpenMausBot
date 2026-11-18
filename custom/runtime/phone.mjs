@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {spawn,execFileSync} from 'node:child_process';
-import {phonePairingLink} from '../../shared/pairing-link.ts';
+import qr from 'qrcode-terminal';
+import {wifiPhoneInvite} from './phone-invite.ts';
 
 export async function runPhone(action,{state,repo,runtime}){
  const home=path.join(state,'companion');
@@ -50,7 +51,8 @@ export async function runPhone(action,{state,repo,runtime}){
   const ip=s.addresses.find(a=>/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(a));
   if(!ip)throw Error('No private Wi-Fi address is available');
   const p=await control('/pairing','POST');
-  const link=phonePairingLink({address:ip,port:devicePort,token:p.token,code:p.code,name:'WORKROOM',hosts:s.hosts,endpoints:s.endpoints,e2e:s.e2e?.descriptor});
+  const link=wifiPhoneInvite({address:ip,port:devicePort,token:p.token,code:p.code,e2e:s.e2e?.descriptor});
   console.log(`iPhone address: ${ip}:${devicePort}\nOne-time phone code: ${p.code}\nExpires: ${new Date(p.pairing.expiresAt).toISOString()}\nNative phone link: ${link}\nMac control: http://127.0.0.1:${controlPort}/#token=${fs.readFileSync(secret,'utf8').trim()}`);
+  qr.generate(link,{small:true});
  }else throw Error('Use phone-start, phone-stop, phone-status or phone-pair');
 }
