@@ -2,6 +2,7 @@ import { decodeRoutedCodexConfig, managedCodexArgs, endpointCodexArgs, type Code
 export { managedCodexArgs, endpointCodexArgs } from "./codex-endpoint-config.ts";
 import { codexActionFailure } from "./codex-action-notice.ts";
 import { codexToolSurfaceArgs } from "./codex-tool-surface.ts";
+import { restrictedNativeApproval } from "../../custom/sandbox/codex-policy.ts";
 import { codexShellDisabled, codexTurnConfigArgs } from "./codex-guest.ts";
 import { TEAM_TOOLS_FAILED, teamToolsFailed } from "./team-tools.ts";
 import { enabledMcpMounts, mcpStartupTracker, supportsMcpStartup } from "./codex-mcp-startup.ts";
@@ -1375,6 +1376,7 @@ export const CodexDriver: ProviderDriver<CodexConfig> = {
         } else {
           approvalParams = namedApprovalParams(approvalMode);
         }
+        approvalParams = restrictedNativeApproval(approvalParams, approvalMode, process.env.WORKROOM_RESTRICT_CODEX_NATIVE === "1");
         // Codex's `never` means "do not ask to escalate", not "grant every requested permission":
         // only Full may synthesize approvals.
         autoAcceptPermissions = approvalMode === "full";
